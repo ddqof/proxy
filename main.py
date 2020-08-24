@@ -10,7 +10,7 @@ class ProxyServer:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(('', 8080))
-        self.socket.listen(10)
+        self.socket.listen(1)
 
     def start(self):
         while True:
@@ -21,22 +21,27 @@ class ProxyServer:
             browser_msg = browser.recv(4096)
             if browser_msg == b'':
                 continue
-
-            print(f'got message from browser: {browser_msg}')
+            print(f'got message: {browser_msg} from browser')
 
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            full_url = browser_msg.decode('utf-8').split()[1][7:-1]
+            request_parts = browser_msg.decode('utf-8').split()[1].split('/')
+            print(request_parts)
+            if len(request_parts) > 1:
+                url = request_parts[2]
+            else:
+                url = request_parts[0]
 
-            print(f'full url is {full_url}')
+            url = url.split(':')
 
-            url = full_url.split('/')[0].split(':')
-
-            print(f'url for connect is {url[0]}')
+            print(f'url for connect is {url}')
 
             if len(url) == 1:
-                server_socket.connect((url[0], 80))
+                url = url[0]
+                server_socket.connect((url, 80))
             else:
-                server_socket.connect((url[0], int(url[1])))
+                port = int(url[1])
+                print(url)
+                server_socket.connect((url, port))
             server_socket.send(browser_msg)
 
             print(f'message to server was sent')
