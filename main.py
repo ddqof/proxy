@@ -1,69 +1,61 @@
 #!/usr/bin/env python3
 
 import socket
+import threading
+from urllib.parse import urlparse
 
-DEBUG = True
+DATA_AMOUNT = 2 ** 20
 
 
 class ProxyServer:
     def __init__(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind(('', 8080))
-        self.socket.listen(1)
+        self.socket.bind(('localhost', 8080))
+        self.socket.listen()
 
-    def start(self):
+    def run(self):
         while True:
-            browser, addr = self.socket.accept()
+            client_socket, addr = self.socket.accept()
 
-            print(f'got connection with browser: {browser}')
+            print(f'got connection with: {addr}\n')
+            request = client_socket.recv(DATA_AMOUNT)
 
-            browser_msg = browser.recv(4096)
-            if browser_msg == b'':
-                continue
-            print(f'got message: {browser_msg} from browser')
+            print(request)
+            url = request.decode('latin-1').split()[1]
+            if 'http' not in url:
+                url = 'http://' + url
+            request_data = urlparse(url)
 
+            print(f'url for connect is {request_data.netloc}, port is {request_data.port}')
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            request_parts = browser_msg.decode('utf-8').split()[1].split('/')
-            print(request_parts)
-            if len(request_parts) > 1:
-                url = request_parts[2]
-            else:
-                url = request_parts[0]
-
-            url = url.split(':')
-
-            print(f'url for connect is {url}')
-
-            if len(url) == 1:
-                url = url[0]
-                server_socket.connect((url, 80))
-            else:
-                port = int(url[1])
-                print(url)
-                server_socket.connect((url, port))
-            server_socket.send(browser_msg)
-
-            print(f'message to server was sent')
-
-            server_socket.settimeout(0.5)
-            result = server_socket.recv(4096)
-            while result != b'':
-                browser.send(result)
+            with server_socket, client_socket:
                 try:
-                    result = server_socket.recv(4096)
-                    print(result)
+                    if request_data.port is None:
+                        server_socket.connect((request_data.netloc, 80))
+                    else:
+                        url = request_data.netloc.split(':')[0]
+                        port = int(request_data.netloc.split(':')[1])
+                        server_socket.connect((url, port))
                 except socket.error:
-                    break
-            print('got message form webserver')
+                    print(f'Connection refused: {request_data.netloc}')
+                    continue
+                server_socket.send(request)
 
-            browser.close()
-            server_socket.close()
+                try:
+                    result = server_socket.recv(DATA_AMOUNT)
+                    while result:
+                        client_socket.send(result)
+                        result = server_socket.recv(DATA_AMOUNT)
+                except ConnectionResetError:
+                    continue
 
 
 def main():
     proxy = ProxyServer()
-    proxy.start()
+    for _ in range(10):
+        thread = threading.Thread(target=proxy.run)
+        thread.start()
 
 
 if __name__ == '__main__':
