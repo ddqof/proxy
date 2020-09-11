@@ -18,19 +18,17 @@ class ProxyServer:
         while True:
             client_socket, addr = self.socket.accept()
 
-            print(f'got connection with: {addr}\n')
             request = client_socket.recv(DATA_AMOUNT)
 
-            print(request)
             url = request.decode('latin-1').split()[1]
             if 'http' not in url:
                 url = 'http://' + url
             request_data = urlparse(url)
 
-            print(f'url for connect is {request_data.netloc}, port is {request_data.port}')
+            print(str(addr) + '\t' + request.decode('latin-1').split()[0] + '\t' + url)
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             with server_socket, client_socket:
-                try:
+                try:  # weird urls
                     if request_data.port is None:
                         server_socket.connect((request_data.netloc, 80))
                     else:
