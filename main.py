@@ -25,7 +25,7 @@ class ProxyServer:
                 url = 'http://' + url
             request_data = urlparse(url)
 
-            print(str(addr) + '\t' + request.decode('latin-1').split()[0] + '\t' + url)
+            print(str(addr), request.decode('latin-1').split()[0], url + '\n')
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             with server_socket, client_socket:
                 try:  # weird urls
@@ -35,17 +35,16 @@ class ProxyServer:
                         url = request_data.netloc.split(':')[0]
                         port = int(request_data.netloc.split(':')[1])
                         server_socket.connect((url, port))
-                except socket.error:
-                    print(f'Connection refused: {request_data.netloc}')
+                except socket.gaierror:
+                    print(f'Connection refused: {request_data.netloc}\n')
                     continue
                 server_socket.send(request)
-
                 try:
                     result = server_socket.recv(DATA_AMOUNT)
                     while result:
                         client_socket.send(result)
                         result = server_socket.recv(DATA_AMOUNT)
-                except ConnectionResetError:
+                except (BrokenPipeError, ConnectionResetError):
                     continue
 
 
