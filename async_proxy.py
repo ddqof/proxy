@@ -1,11 +1,16 @@
+#!/usr/bin/env python3
+
 import asyncio
 import aiohttp
+import socket
 from aiohttp import web
 
 
-async def handler(request):  # TODO: implement https, how to throw errors in browser
+async def handler(request):  # TODO: implement https
+    print(repr(request))
     async with aiohttp.ClientSession() as session:
-        print(request.method, request.url)
+        if request.method == "CONNECT":
+            web.Response(body=b'HTTP/1.1 200 Connection established\r\n\r\n')
         async with session.request(request.method, request.url) as resp:
             print(resp.url, resp.status)
             return web.Response(body=await resp.read(), content_type=resp.content_type,
