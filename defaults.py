@@ -1,3 +1,3 @@
-HOST = "localhost"
-HTTP_PORT = 8080
-HTTPS_PORT = 8081
+LOCALHOST = "localhost"
+CHUNK_SIZE = 1024
+DEF_PORT = 8080
