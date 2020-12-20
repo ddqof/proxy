@@ -92,7 +92,7 @@ async def handle_http(
     )
 
 
-async def run(port: int = DEF_PORT):
+async def run(port: int):
     """
     Launch async proxy at specified host and port.
     """
@@ -107,4 +107,5 @@ async def run(port: int = DEF_PORT):
 
 
 if __name__ == '__main__':
-    asyncio.run(run())
+    args = parse_args()
+    asyncio.run(run(args.port))

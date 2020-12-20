@@ -1,3 +1,2 @@
 LOCALHOST = "localhost"
 CHUNK_SIZE = 1024
-DEF_PORT = 8080
