@@ -4,7 +4,7 @@ import asyncio
 import socket
 from asyncio import StreamWriter, StreamReader
 from arg_parser import parse_args
-from defaults import LOCALHOST, CHUNK_SIZE, DEF_PORT
+from defaults import LOCALHOST, CHUNK_SIZE
 from http_parser import parse, Request
 
 
