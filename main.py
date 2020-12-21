@@ -2,10 +2,16 @@
 
 import asyncio
 import socket
+import logging.config
 from asyncio import StreamWriter, StreamReader
-from arg_parser import parse_args
-from defaults import LOCALHOST, CHUNK_SIZE
-from http_parser import parse, Request
+from _arg_parser import parse_args
+from _defaults import LOCALHOST, CHUNK_SIZE
+from _http_parser import parse, Request
+from log_config import LOGGING_CONFIG
+
+
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 async def handle_connection(
@@ -21,7 +27,9 @@ async def handle_connection(
     if not raw_request:
         return
     request = parse(raw_request)
+    logger.info(f"{request.method} {request.url}")
     if request.method == "CONNECT":
+        logger.info(f"Connection established: {request.url}")
         client_writer.write(b"HTTP/1.1 200\r\n\r\n")
         await handle_https(client_reader, client_writer, request)
     else:
@@ -40,14 +48,35 @@ async def handle_https(
         r.headers["Host"], r.port
     )
     await asyncio.gather(
-        forward(client_reader, server_writer),
-        forward(server_reader, client_writer)
+        forward(client_reader, server_writer, r),
+        forward(server_reader, client_writer, r)
+    )
+
+
+def log_forwarding(
+        sender_ip: str,
+        data_size: int,
+        r: Request
+) -> None:
+    if sender_ip == "::1":
+        message = f"{r.method} {r.url}"
+        client_ip = "127.0.0.1"
+    else:
+        message = "Response from server"
+        client_ip = sender_ip
+    logger.debug(
+        message,
+        extra={
+            "client_ip": client_ip,
+            "data_size": data_size
+        }
     )
 
 
 async def forward(
         reader: StreamReader,
-        writer: StreamWriter
+        writer: StreamWriter,
+        r: Request
 ) -> None:
     """
     Forwarding HTTP requests between reader and writer until
@@ -55,7 +84,11 @@ async def forward(
     """
     while True:
         try:
-            data = await reader.read(CHUNK_SIZE)
+            data = await reader.read(1024)
+            log_forwarding(
+                writer.get_extra_info("peername")[0],
+                len(data), r
+            )
 
             if not data:
                 writer.close()
@@ -65,7 +98,7 @@ async def forward(
             writer.write(data)
             await writer.drain()
         except ConnectionResetError:
-            print("Connection closed")
+            logger.info(f"Connection closed: {r.url}")
             break
 
 
@@ -82,25 +115,25 @@ async def handle_http(
             r.headers["Host"], r.port
         )
     except socket.gaierror:
-        print(f"Connection refused: {r.method} {r.url}")
+        logger.info(f"Connection refused: {r.method}:{r.url}")
         return
     server_writer.write(r.raw)
     await server_writer.drain()
     await asyncio.gather(
-        forward(server_reader, client_writer),
-        forward(client_reader, server_writer),
+        forward(server_reader, client_writer, r),
+        forward(client_reader, server_writer, r)
     )
 
 
-async def run(port: int):
+async def start(port: int):
     """
-    Launch async proxy at specified host and port.
+    Launch async proxy-server at specified host and port.
     """
     srv = await asyncio.start_server(
         handle_connection, LOCALHOST, port)
 
     addr = srv.sockets[0].getsockname()
-    print(f'Serving on {addr}')
+    logger.info(f"Serving on {addr}")
 
     async with srv:
         await srv.serve_forever()
@@ -108,4 +141,4 @@ async def run(port: int):
 
 if __name__ == '__main__':
     args = parse_args()
-    asyncio.run(run(args.port))
+    asyncio.run(start(args.port))

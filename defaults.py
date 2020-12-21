@@ -1,2 +1,0 @@
-LOCALHOST = "localhost"
-CHUNK_SIZE = 1024

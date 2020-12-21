@@ -1,7 +1,5 @@
 import argparse
-
-__author__ = "Dmitry Podaruev"
-__email__ = "ddqof.vvv@gmail.com"
+from _defaults import __email__, __author__
 
 
 def parse_args():
@@ -16,7 +14,7 @@ def parse_args():
         type=int,
         default=8080,
         help="Specify port number on which proxy server"
-             " will receive connections."
+             " will receive connections.\nDefault is 8080."
     )
 
     return parser.parse_args()

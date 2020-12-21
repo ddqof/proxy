@@ -52,8 +52,3 @@ def build_headers(http_meta: str):
             value = h_lines[i].split(":")[1].strip()
             headers[field] = value
     return headers
-
-
-def change_path(http_meta: bytes, url: str, path: str):
-    str_req = http_meta.decode()
-    return str_req.replace(url, path).encode()
