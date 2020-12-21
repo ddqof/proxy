@@ -59,18 +59,12 @@ def log_forwarding(
         r: Request
 ) -> None:
     if sender_ip == "::1":
-        message = f"{r.method} {r.url}"
+        query = f"{r.method} {r.url}"
         client_ip = "127.0.0.1"
     else:
-        message = "Response from server"
+        query = "Response from server"
         client_ip = sender_ip
-    logger.debug(
-        message,
-        extra={
-            "client_ip": client_ip,
-            "data_size": data_size
-        }
-    )
+    logger.debug(f"{client_ip} {query} {data_size}")
 
 
 async def forward(
