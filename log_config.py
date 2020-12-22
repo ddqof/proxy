@@ -1,5 +1,6 @@
 LOG_FILENAME = "log.log"
 
+
 LOGGING_CONFIG = {
     "version": 1,
     "loggers": {
@@ -20,7 +21,7 @@ LOGGING_CONFIG = {
             "level": "INFO",
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "info_format",
-            "filename": LOG_FILENAME
+            "filename": LOG_FILENAME,
         }
     },
     "formatters": {
