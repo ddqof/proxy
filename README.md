@@ -4,7 +4,7 @@ Author: Dmitry Podaruev (ddqof.vvv@gmail.com)
 
 ## Description
 
-It's simple that forwarding your http and https traffic.
+It's simple tool that forward your http and https traffic.
 
 ## Requirements
 
