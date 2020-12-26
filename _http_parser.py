@@ -1,12 +1,22 @@
 import re
-from collections import namedtuple
 
 method_regex = re.compile(r"^(\w+)")
-url_regex = re.compile(r"\w+ (.+?) HTTP/\d.\d")
+url_regex = re.compile(r"\w+ (.+?) HTTP/\d.\d", re.DOTALL)
+host_regex = re.compile(r"(^https?://|)([A-z.\-0-9]+)")
 port_regex = re.compile(r":(\d+)$")
 
 
-def parse(http_meta: bytes):
+class Request:
+
+    def __init__(self, method, url, host, raw, port):
+        self.method = method
+        self.url = url
+        self.host = host
+        self.raw = raw
+        self.port = port
+
+
+def parse(http_meta: bytes) -> Request:
     """
     Parse HTTP or HTTPS raw binary request body into.
 
@@ -24,31 +34,27 @@ def parse(http_meta: bytes):
          "port": HTTP request port
     """
     decoded_data = http_meta.decode()
-    r_method = extract_method(decoded_data)
-    r_headers = build_headers(decoded_data)
-    r_url = extract_url(decoded_data)
-    r_port = extract_port(decoded_data)
-    Request = namedtuple(
-        "Request",
-        ["method", "headers", "url", "raw", "port"]
-    )
+    r_method = get_method(decoded_data)
+    r_url = get_url(decoded_data)
+    r_port = get_port_from_url(r_url)
     if r_port is None:
         if r_method == "CONNECT":
             r_port = 443
         else:
             r_port = 80
+    r_host = get_host_from_url(r_url)
     return Request(
         method=r_method,
-        headers=r_headers,
         url=r_url,
+        host=r_host,
         raw=http_meta,
         port=r_port
     )
 
 
-def extract_method(http_meta: str) -> str:
+def get_method(http_meta: str) -> str:
     """
-    Extracts and returns method from HTTP request body.
+    Returns method from HTTP request body.
 
     Params:
         http_meta: raw HTTP request body
@@ -56,40 +62,36 @@ def extract_method(http_meta: str) -> str:
     return re.search(method_regex, http_meta).group(1)
 
 
-def extract_url(http_meta: str) -> str:
+def get_url(http_meta: str) -> str:
     """
-    Extracts and returns url from HTTP request body.
+    Returns absolute url from HTTP request body.
 
     Params:
         http_meta: raw HTTP request body
     """
-    return re.search(url_regex, http_meta, re.DOTALL).group(1)
+    return re.search(url_regex, http_meta).group(1)
 
 
-def extract_port(http_url: str) -> str:
+def get_port_from_url(url: str) -> str:
     """
-    Extracts and returns port from HTTP request body.
+    Returns port from url.
 
     Params:
         http_meta: raw HTTP request body
     """
-    return re.search(url_regex, http_url).group(1)
+    mo = re.search(port_regex, url)
+    if mo is not None:
+        res = mo.group(1)
+    else:
+        res = None
+    return res
 
 
-def build_headers(http_meta: str) -> dict:
+def get_host_from_url(url: str) -> str:
     """
-    Extracts and parses HTTP headers into dict-mapping
-    from headers fields in theirs values.
+    Returns hostname from url.
 
     Params:
         http_meta: raw HTTP request body
     """
-    #  removing first line with method
-    h_lines = http_meta.split("\r\n")[1:]
-    headers = {}
-    for i in range(len(h_lines)):
-        if h_lines[i]:
-            field = h_lines[i].split(":")[0]
-            value = h_lines[i].split(":")[1].strip()
-            headers[field] = value
-    return headers
+    return re.search(host_regex, url).group(2)
