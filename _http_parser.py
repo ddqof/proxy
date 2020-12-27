@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple
 
 method_regex = re.compile(r"^(\w+)")
 url_regex = re.compile(r"\w+ (.+?) HTTP/\d.\d", re.DOTALL)
@@ -6,14 +7,12 @@ host_regex = re.compile(r"(^https?://|)([A-z.\-0-9]+)")
 port_regex = re.compile(r":(\d+)$")
 
 
-class Request:
-
-    def __init__(self, method, url, host, raw, port):
-        self.method = method
-        self.url = url
-        self.host = host
-        self.raw = raw
-        self.port = port
+class Request(NamedTuple):
+    method: str
+    url: str
+    host: str
+    raw: bytes
+    port: int
 
 
 def parse(http_meta: bytes) -> Request:
