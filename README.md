@@ -12,5 +12,5 @@ You don't need to install any third-party packages.
 
 ## Examples of usage
 
-* `./main.py` for just run proxy at default (`8000`) port.
-* `./main.py 9999` for run proxy at `9999` port.
+* `./main.py` to run proxy at default (`8000`) port.
+* `./main.py 9999` to run proxy at `9999` port.
