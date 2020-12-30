@@ -1,10 +1,2 @@
-LOCALHOST = "localhost"
-CHUNK_SIZE = 2 ** 12
-START_SERVER_MSG = "Serving on {app_address}"
-CONNECTION_ESTABLISHED_MSG = "Connection established: {url}"
-CONNECTION_CLOSED_MSG = "Connection closed: {url}"
-CONNECTION_REFUSED_MSG = "Connection refused: {method} {url}"
-HANDLING_HTTP_REQUEST_MSG = "Handling HTTP request: {method} {url}"
-HANDLING_HTTPS_CONNECTION_MSG = "Handling HTTPS connection: {url}"
 __author__ = "Dmitry Podaruev"
 __email__ = "ddqof.vvv@gmail.com"
