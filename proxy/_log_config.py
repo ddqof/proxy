@@ -1,12 +1,16 @@
-LOG_FILENAME = "log.log"
+from pathlib import PurePath
 
+LOGFILE_PATH = PurePath(__file__).parent / "log.log"
 
 LOGGING_CONFIG = {
     "version": 1,
     "loggers": {
-        "__main__": {
+        "proxy.proxy": {
             "level": "INFO",
-            "handlers": ["info_file_handler", "debug_console_handler"],
+            "handlers": [
+                "info_file_handler",
+                "debug_console_handler",
+            ],
             "propagate": False
         }
     },
@@ -21,8 +25,14 @@ LOGGING_CONFIG = {
             "level": "INFO",
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "info_format",
-            "filename": LOG_FILENAME,
-        }
+            "filename": LOGFILE_PATH,
+        },
+        "warning_console_handler": {
+            "level": "WARNING",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "debug_format"
+        },
     },
     "formatters": {
         "info_format": {
