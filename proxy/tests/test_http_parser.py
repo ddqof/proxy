@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
 
-from _http_parser import (parse,
-                          get_method,
-                          get_url,
-                          get_host_from_url,
-                          get_port_from_url)
+from proxy._http_parser import (parse,
+                                get_method,
+                                get_url,
+                                get_host_from_url,
+                                get_port_from_url)
 
 
 @pytest.fixture
@@ -56,10 +56,10 @@ def test_get_url_from_browser_https_meta(https_meta_from_browser):
     assert get_url(https_meta_from_browser) == "www.google.com:443"
 
 
-@patch("_http_parser.get_method")
-@patch("_http_parser.get_url")
-@patch("_http_parser.get_port_from_url")
-@patch("_http_parser.get_host_from_url")
+@patch("proxy._http_parser.get_method")
+@patch("proxy._http_parser.get_url")
+@patch("proxy._http_parser.get_port_from_url")
+@patch("proxy._http_parser.get_host_from_url")
 def test_parse(
         get_host_from_url_mock,
         get_port_from_url_mock,
@@ -82,11 +82,11 @@ def test_parse(
     get_port_from_url_mock.assert_called_once_with("some_url")
     get_host_from_url_mock.assert_called_once_with("some_url")
 
-    assert r.url == "some_url"
+    assert r.abs_url == "some_url"
     assert r.method == "MOCK_METHOD"
     assert r.port == "secret_port"
     assert r.raw == http_binary_data
-    assert r.host == "some_host"
+    assert r.host_url == "some_host"
 
 
 def test_get_port_from_url_with_port():
