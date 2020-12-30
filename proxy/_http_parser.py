@@ -9,8 +9,8 @@ port_regex = re.compile(r":(\d+)$")
 
 class Request(NamedTuple):
     method: str
-    url: str
-    host: str
+    abs_url: str
+    host_url: str
     raw: bytes
     port: int
 
@@ -44,8 +44,8 @@ def parse(http_meta: bytes) -> Request:
     r_host = get_host_from_url(r_url)
     return Request(
         method=r_method,
-        url=r_url,
-        host=r_host,
+        abs_url=r_url,
+        host_url=r_host,
         raw=http_meta,
         port=r_port
     )
