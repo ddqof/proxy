@@ -51,13 +51,13 @@ data limit for this resource.
 
 To add restriction for 10 megabytes for youtube you can do this:
 
-* `"restricted_resources": { "youtube.com":  10 * 1_000_000}`
+* `"restricted_resources": { "youtube.com":  10}`
 
-* `"restricted_resources": { "https://www.youtube.com/":  10 * 1_000_000}`
+* `"restricted_resources": { "https://www.youtube.com/":  10}`
 
 Both statemenets will effect the same.
 
-Like in blacklist feature, you will see notification banner only if site you
+Like in blacklist feature you will see notification banner only if site you
 have been added has **http** scheme, otherwise there will be
 `ERR_CONNECTION_CLOSED` error.
 
