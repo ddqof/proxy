@@ -133,7 +133,7 @@ class ProxyServer:
             r: Request
     ) -> None:
         """
-        Receives data from server and handles it.
+        Receives data from localhost and forward it to server.
         """
         try:
             while True:
@@ -159,7 +159,7 @@ class ProxyServer:
             r: Request
     ) -> None:
         """
-        Receives data from server and handles it.
+        Receives data from server and forward it to localhost.
         """
         try:
             while True:
