@@ -283,5 +283,3 @@ class ProxyServer:
                     self._spent_data_amount[rsc.host_url] = chunk_size
                 self._logger.debug(f"{self._spent_data_amount[rsc.host_url]}"
                                    f" WAS SPENT FOR {rsc.host_url}")
-
-# TODO: подумай над тем, чтобы в логах выводить информация о количестве байтов ответа
