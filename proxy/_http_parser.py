@@ -3,11 +3,19 @@ from typing import NamedTuple
 
 method_regex = re.compile(r"^(\w+)")
 url_regex = re.compile(r"\w+ (.+?) HTTP/\d.\d", re.DOTALL)
-host_regex = re.compile(r"(^https?://|)([A-z.\-0-9]+)")
+host_regex = re.compile(r"(^https?://|)(www.)?([A-z.\-0-9]+)")
 port_regex = re.compile(r":(\d+)$")
 
 
 class Request(NamedTuple):
+    """
+     "method": HTTP request method.
+     "abs_url": absolute url requested in HTTP request. May also
+      include port at the end.
+     "host_url": url of host
+     "raw": raw binary request body.
+     "port": port specified in HTTP request
+    """
     method: str
     abs_url: str
     host_url: str
@@ -17,20 +25,15 @@ class Request(NamedTuple):
 
 def parse(http_meta: bytes) -> Request:
     """
-    Parse HTTP or HTTPS raw binary request body into.
+    Parse HTTP(S) raw binary request body into.
 
     Params:
-        http_meta: raw binary HTTP or HTTPS request body
+        http_meta: raw binary HTTP(S) request body
 
     Returns:
+        |Request| object
         |namedtuple| Request("method", "headers", "url", "raw", "port").
-         "method": HTTP request method.
-         "headers": dict-mapping from HTTP request headers fields to
-          theirs value.
-         "url": absolute url requested in HTTP request. May also
-          include port at the end of url.
-         "raw": raw binary request body.
-         "port": HTTP request port
+
     """
     decoded_data = http_meta.decode()
     r_method = get_method(decoded_data)
@@ -93,4 +96,4 @@ def get_host_from_url(url: str) -> str:
     Params:
         http_meta: raw HTTP request body
     """
-    return re.search(host_regex, url).group(2)
+    return re.search(host_regex, url).group(3)

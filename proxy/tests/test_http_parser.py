@@ -121,5 +121,5 @@ def test_get_host_from_url_doesnt_catch_port():
     assert get_host_from_url("google.com:443") == "google.com"
 
 
-def test_get_host_from_url_catch_www():
-    assert get_host_from_url("www.google.com") == "www.google.com"
+def test_get_host_from_url_doesnt_catch_www():
+    assert get_host_from_url("www.google.com") == "google.com"
