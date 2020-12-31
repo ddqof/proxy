@@ -58,8 +58,8 @@ To add restriction for 10 megabytes for youtube you can do this:
 Both statemenets will effect the same.
 
 Like in blacklist feature, you will see notification banner only if site you
-have been added has **http** scheme, otherwise there will be error
-`ERR_CONNECTION_CLOSED`.
+have been added has **http** scheme, otherwise there will be
+`ERR_CONNECTION_CLOSED` error.
 
 #### Accuracy
 
