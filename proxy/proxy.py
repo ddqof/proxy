@@ -40,7 +40,7 @@ class ProxyServer:
         self._logger = logging.getLogger(__name__)
         self._black_list = black_list
 
-    async def run(self, event: asyncio.Event = None):
+    async def run(self):
         """
         Launch async proxy-server at specified host and port.
         """
