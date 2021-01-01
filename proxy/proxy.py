@@ -27,8 +27,12 @@ class ProxyServer:
             self,
             port: int,
             restricted: List[RestrictedResource] = None,
-            black_list: List[str] = None
+            black_list: List[str] = None,
     ):
+        if restricted is None:
+            restricted = []
+        if black_list is None:
+            black_list = []
         self.port = port
         self._restricted = restricted
         self._spent_data_amount = {}
@@ -36,7 +40,7 @@ class ProxyServer:
         self._logger = logging.getLogger(__name__)
         self._black_list = black_list
 
-    async def run(self):
+    async def run(self, event: asyncio.Event = None):
         """
         Launch async proxy-server at specified host and port.
         """
@@ -114,6 +118,7 @@ class ProxyServer:
             server_reader, server_writer = await asyncio.open_connection(
                 r.host_url, r.port
             )
+            print("popal")
         except socket.gaierror:
             self._logger.info(
                 CONNECTION_REFUSED_MSG.format(method=r.method, url=r.abs_url)
@@ -122,11 +127,11 @@ class ProxyServer:
         server_writer.write(r.raw)
         await server_writer.drain()
         await asyncio.gather(
-            self._forward_to_localhost(server_reader, client_writer, r),
-            self._forward_to_server(client_reader, server_writer, r)
+            self._forward_to_local(server_reader, client_writer, r),
+            self._forward_to_remote(client_reader, server_writer, r)
         )
 
-    async def _forward_to_server(
+    async def _forward_to_remote(
             self,
             localhost_reader: StreamReader,
             server_writer: StreamWriter,
@@ -152,14 +157,14 @@ class ProxyServer:
         except ConnectionResetError:
             self._logger.info(CONNECTION_CLOSED_MSG.format(url=r.abs_url))
 
-    async def _forward_to_localhost(
+    async def _forward_to_local(
             self,
             server_reader: StreamReader,
             localhost_writer: StreamWriter,
             r: Request
     ) -> None:
         """
-        Receives data from server and forward it to localhost.
+        Receives data from remote server and forward it to localhost.
         """
         try:
             while True:
@@ -223,8 +228,8 @@ class ProxyServer:
         client_writer.write(b"HTTP/1.1 200 Connection established\r\n\r\n")
         self._logger.debug(CONNECTION_ESTABLISHED_MSG.format(url=r.abs_url))
         await asyncio.gather(
-            self._forward_to_server(client_reader, server_writer, r),
-            self._forward_to_localhost(server_reader, client_writer, r)
+            self._forward_to_remote(client_reader, server_writer, r),
+            self._forward_to_local(server_reader, client_writer, r)
         )
 
     def _log_forwarding(
@@ -275,7 +280,7 @@ class ProxyServer:
             if any(re.search(pattern, resource_link) for
                    pattern in rsc.url_patterns) or \
                     rsc.host_url in resource_link:
-                #  don't use rsh.host_url == r.host_url
+                #  don't use rsc.host_url == r.host_url
                 #  because r.host_url can contain extra www
                 try:
                     self._spent_data_amount[rsc.host_url] += chunk_size
