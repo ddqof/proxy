@@ -75,9 +75,13 @@ class ProxyServer:
                 await self._handle_black_list(client_writer, request)
             else:
                 if request.method == "CONNECT":
-                    await self._handle_https(client_reader, client_writer, request)
+                    await self._handle_https(
+                        client_reader, client_writer, request
+                    )
                 else:
-                    await self._handle_http(client_reader, client_writer, request)
+                    await self._handle_http(
+                        client_reader, client_writer, request
+                    )
         except Exception as e:
             self._logger.exception(e)
             asyncio.get_event_loop().stop()
@@ -119,7 +123,6 @@ class ProxyServer:
             server_reader, server_writer = await asyncio.open_connection(
                 r.host_url, r.port
             )
-            print("popal")
         except socket.gaierror:
             self._logger.info(
                 CONNECTION_REFUSED_MSG.format(method=r.method, url=r.abs_url)
@@ -207,7 +210,9 @@ class ProxyServer:
             await client_writer.wait_closed()
         else:
             with open(DATA_LIMIT_PATH) as f:
-                client_writer.write(f"HTTP/1.1 200 OK\r\n\r\n{f.read()}".encode())
+                client_writer.write(
+                    f"HTTP/1.1 200 OK\r\n\r\n{f.read()}".encode()
+                )
             await client_writer.drain()
             client_writer.close()
             await client_writer.wait_closed()
