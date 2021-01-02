@@ -80,6 +80,7 @@ class ProxyServer:
                     await self._handle_http(client_reader, client_writer, request)
         except Exception as e:
             self._logger.exception(e)
+            asyncio.get_event_loop().stop()
 
     async def _handle_black_list(
             self,
