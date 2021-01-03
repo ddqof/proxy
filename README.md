@@ -19,7 +19,7 @@ You don't need to install any third-party packages.
 
 ## Features
 
-All you need to enable any feature is to edit config file `proxy_config.py`. 
+All you need to enable any feature is to edit config file `config.py`. 
 
 ### Blacklist
 
