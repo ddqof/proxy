@@ -49,13 +49,11 @@ data limit for this resource.
 
 #### Examples
 
-To add restriction for 10 megabytes for youtube you can do this:
+To add restriction for 10 megabytes for youtube you can do one of this:
 
-* `"restricted_resources": { "youtube.com":  10}`
+* `"restricted_resources": { "youtube.com":  10 * 1_000_000}`
 
-* `"restricted_resources": { "https://www.youtube.com/":  10}`
-
-Both statemenets will effect the same.
+* `"restricted_resources": { "https://www.youtube.com/":  10 * 1_000_000}`
 
 Like in blacklist feature you will see notification banner only if site you
 have been added has **http** scheme, otherwise there will be
@@ -64,7 +62,6 @@ have been added has **http** scheme, otherwise there will be
 #### Accuracy
 
 Restriction accuracy cannot be 100% for any high-load services like
-**vk.com** or **youtube.com** but proxy catches major part of traffic from these resources.
-With other websites this proxy cannot ensure that this feature will count
-major part of traffic too. Use this feature if you sure that resource you want to
+but proxy catches major part of traffic from **vk** and **youtube**.
+Use this feature if you sure that resource you want to
 restrict doesn't send requests to many other resources.
