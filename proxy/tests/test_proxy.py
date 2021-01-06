@@ -1,11 +1,11 @@
 import asyncio
 import pytest
 from asyncio import StreamReader, StreamWriter
-from proxy._defaults import BLACK_HOLE_PATH, DATA_LIMIT_PATH
-from proxy.config_handler import RestrictedResource
+from proxy._defaults import BLOCKED_RESOURCE_FILE_PATH, LIMITED_RESOURCE_FILE_PATH
+from proxy._limited_resource import LimitedResource
 from typing import Callable, List
 from proxy._defaults import LOCALHOST
-from proxy._http_parser import Request
+from proxy.connections.greeting import Request
 from proxy.proxy import ProxyServer
 from unittest.mock import patch
 
@@ -111,7 +111,7 @@ async def test_http_blacklist(
         server_port=server_port,
         test_case=send_then_recv
     )
-    with open(BLACK_HOLE_PATH) as f:
+    with open(BLOCKED_RESOURCE_FILE_PATH) as f:
         assert result == f"HTTP/1.1 200 OK\r\n\r\n{f.read()}".encode()
 
 
@@ -145,12 +145,12 @@ async def test_http_restrict(
 
     result = await run_test(
         proxy_port=proxy_port,
-        restricted=[RestrictedResource(LOCALHOST, len(b"some message"))],
+        restricted=[LimitedResource(LOCALHOST, len(b"some message"))],
         black_list=[],
         server_port=server_port,
         test_case=send_until_limit
     )
-    with open(DATA_LIMIT_PATH) as f:
+    with open(LIMITED_RESOURCE_FILE_PATH) as f:
         assert result == f"HTTP/1.1 200 OK\r\n\r\n{f.read()}".encode()
 
 

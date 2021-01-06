@@ -8,7 +8,15 @@ CONNECTION_CLOSED_MSG = "Connection closed: {url}"
 CONNECTION_REFUSED_MSG = "Connection refused: {method} {url}"
 HANDLING_HTTP_REQUEST_MSG = "Handling HTTP request: {method} {url}"
 HANDLING_HTTPS_CONNECTION_MSG = "Handling HTTPS connection: {url}"
-BLACK_HOLE_MSG = "Black Hole: {url}"
-BLOCKED_WEBPAGE = "Blocked: {url}"
-BLACK_HOLE_PATH = Path(__file__).parent / "service" / "black_hole_page.html"
-DATA_LIMIT_PATH = Path(__file__).parent / "service" / "data_limit_page.html"
+WEBPAGE_IS_BLOCKED_MSG = "Blocked: {url}"
+WEBPAGE_IS_LIMITED_MSG = "Limited: {url}"
+BLOCKED_RESOURCE_FILE_PATH = (
+        Path(__file__).parent /
+        "service" /
+        "black_hole_page.html"
+)
+LIMITED_RESOURCE_FILE_PATH = (
+        Path(__file__).parent /
+        "service" /
+        "data_limit_page.html"
+)

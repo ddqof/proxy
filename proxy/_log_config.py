@@ -41,7 +41,8 @@ LOGGING_CONFIG = {
             "datefmt": "%d-%b-%Y:%H:%M:%S"
         },
         "debug_format": {
-            "format": "[{asctime}] [{levelname}] {message} ({funcName}:{lineno})",
+            "format": "[{asctime}] [{levelname}] {message} "
+                      "({funcName}:{lineno})",
             "style": "{",
             "datefmt": "%d-%b-%Y:%H:%M:%S",
         }
