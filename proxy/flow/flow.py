@@ -21,7 +21,7 @@ class Flow:
 
     async def establish(self):
         if self.scheme is HTTPScheme.HTTPS:
-            await self._client_conn.write(b"http/1.1 200 connection established\r\n\r\n")
+            await self._client_conn.write(b"HTTP/1.1 200 Connection established\r\n\r\n")
         else:
             await self._server_conn.write(self._greeting.raw)
 
