@@ -14,7 +14,7 @@ def parse_args():
         type=int,
         default=8080,
         help="Specify port number on which proxy server"
-             " will receive connections.\nDefault is 8080."
+             " will receive connection.\nDefault is 8080."
     )
 
     return parser.parse_args()

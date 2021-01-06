@@ -39,6 +39,9 @@ class Greeting:
         self.hostname = Greeting.get_host_from_url(self.abs_url)
         self.raw = data
 
+    def __str__(self):
+        return f"{self.method} {self.abs_url}"
+
     @staticmethod
     def get_method(http_meta: str) -> str:
         """

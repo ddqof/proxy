@@ -8,7 +8,7 @@ from cfg import PROXY_CONFIG
 
 if __name__ == '__main__':
     args = parse_args()
-    proxy = ProxyServer(args.port, PROXY_CONFIG)
+    proxy = ProxyServer(args.port, cfg=PROXY_CONFIG)
     try:
         asyncio.run(proxy.run())
     except KeyboardInterrupt:

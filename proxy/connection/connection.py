@@ -1,6 +1,4 @@
-import asyncio
 from asyncio import StreamReader, StreamWriter
-from proxy.connections.greeting import HTTPScheme
 
 
 class Connection:
@@ -21,10 +19,6 @@ class Connection:
         self._writer.write(data)
         await self._writer.drain()
 
-    async def close(self):
+    async def close(self) -> None:
         self._writer.close()
         await self._writer.wait_closed()
-
-    async def establish_https(self):
-        self._writer.write(b"HTTP/1.1 200 Connection established\r\n\r\n")
-        await self._writer.drain()

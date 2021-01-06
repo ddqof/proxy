@@ -39,7 +39,7 @@ class RestrictedResource:
             return f.read()
 
     def is_data_lim_reached(self):
-        return self.spent_data > self.data_limit
+        return self.spent_data >= self.data_limit
 
     def update_spent_data(self, chunk_size: int):
         self.spent_data += chunk_size

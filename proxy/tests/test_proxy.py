@@ -2,10 +2,9 @@ import asyncio
 import pytest
 from asyncio import StreamReader, StreamWriter
 from proxy._defaults import BLOCKED_RESOURCE_FILE_PATH, LIMITED_RESOURCE_FILE_PATH
-from proxy._limited_resource import LimitedResource
 from typing import Callable, List
 from proxy._defaults import LOCALHOST
-from proxy.connections.greeting import Request
+from proxy.connection.greeting import Request
 from proxy.proxy import ProxyServer
 from unittest.mock import patch
 

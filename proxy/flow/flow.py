@@ -1,8 +1,7 @@
 import asyncio
 
-from asyncio import StreamReader, StreamWriter
-from proxy.connections.greeting import HTTPScheme, Greeting
-from proxy.connections.connection import Connection
+from proxy.connection.greeting import HTTPScheme, Greeting
+from proxy.connection.connection import Connection
 
 
 class Flow:
@@ -22,11 +21,11 @@ class Flow:
 
     async def establish(self):
         if self.scheme is HTTPScheme.HTTPS:
-            await self._client_conn.establish_https()
+            await self._client_conn.write(b"http/1.1 200 connection established\r\n\r\n")
         else:
             await self._server_conn.write(self._greeting.raw)
 
-    async def run(self):
+    async def make(self):
         from_server_to_client_task = asyncio.create_task(
             self._forward(self._server_conn, self._client_conn)
         )
@@ -44,8 +43,9 @@ class Flow:
                     from_server_to_client_task,
                     from_client_to_server_task
                 )
+            return from_server_to_client_task.result()
         except ConnectionResetError as e:
-            print(e)  # TODO: логгерить это
+            print(e)
 
     async def _forward(self, conn_to_read, conn_to_write):
         msg_len = 0
