@@ -88,6 +88,8 @@ class ProxyServer:
                 await self._handle_https(*args)
             else:
                 await self._handle_http(*args)
+        except ConnectionResetError:
+            self._logger.info(CONNECTION_CLOSED_MSG.format(url=greeting.abs_url))
         except Exception as e:
             self._logger.exception(e)
             asyncio.get_event_loop().stop()
@@ -143,20 +145,17 @@ class ProxyServer:
         """
         Receives data from localhost and forward it to server.
         """
-        try:
-            while True:
-                data = await local_reader.read(CHUNK_SIZE)
-                if not data:
-                    server_writer.close()
-                    await server_writer.wait_closed()
-                    break
-                server_writer.write(data)
-                await server_writer.drain()
-                self._log_forwarding(
-                    server_writer.get_extra_info("peername")[0],
-                    len(data), r)
-        except ConnectionResetError:
-            self._logger.info(CONNECTION_CLOSED_MSG.format(url=r.abs_url))
+        while True:
+            data = await local_reader.read(CHUNK_SIZE)
+            if not data:
+                server_writer.close()
+                await server_writer.wait_closed()
+                break
+            server_writer.write(data)
+            await server_writer.drain()
+            self._log_forwarding(
+                server_writer.get_extra_info("peername")[0],
+                len(data), r)
 
     async def _forward_to_local(
             self,
@@ -167,33 +166,30 @@ class ProxyServer:
         """
         Receives data from remote server and forward it to localhost.
         """
-        try:
-            while True:
-                data = await server_reader.read(CHUNK_SIZE)
-                if r.is_restricted:
-                    if self._restrictions[r.initiator].spent_data >= \
-                            self._restrictions[r.initiator].data_limit:
-                        await self._handle_limited_page(local_writer, r)
-                        break
-                if data:
-                    local_writer.write(data)
-                    await local_writer.drain()
-                    self._log_forwarding(
-                        local_writer.get_extra_info("peername")[0],
-                        len(data),
-                        r)
-                else:
-                    local_writer.close()
-                    await local_writer.wait_closed()
+        while True:
+            data = await server_reader.read(CHUNK_SIZE)
+            if r.is_restricted:
+                if self._restrictions[r.initiator].spent_data >= \
+                        self._restrictions[r.initiator].data_limit:
+                    await self._handle_limited_page(local_writer, r)
                     break
-                if r.is_restricted:
-                    self._restrictions[r.initiator].spent_data += len(data)
-                    self._logger.debug(
-                        f"{self._restrictions[r.initiator].spent_data}"
-                        f" WAS SPENT FOR {r.initiator}"
-                    )
-        except ConnectionResetError:
-            self._logger.info(CONNECTION_CLOSED_MSG.format(url=r.abs_url))
+            if data:
+                local_writer.write(data)
+                await local_writer.drain()
+                self._log_forwarding(
+                    local_writer.get_extra_info("peername")[0],
+                    len(data),
+                    r)
+            else:
+                local_writer.close()
+                await local_writer.wait_closed()
+                break
+            if r.is_restricted:
+                self._restrictions[r.initiator].spent_data += len(data)
+                self._logger.debug(
+                    f"{self._restrictions[r.initiator].spent_data}"
+                    f" WAS SPENT FOR {r.initiator}"
+                )
 
     async def _handle_limited_page(
             self,
