@@ -2,10 +2,10 @@ import asyncio
 import pytest
 from asyncio import StreamReader, StreamWriter
 from proxy._defaults import BLACK_HOLE_PATH, DATA_LIMIT_PATH
-from proxy.config_handler import RestrictedResource
+from proxy._proxy_config import RestrictedResource
 from typing import Callable, List
 from proxy._defaults import LOCALHOST
-from proxy._http_parser import Request
+from proxy._request import Request
 from proxy.proxy import ProxyServer
 from unittest.mock import patch
 
