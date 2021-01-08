@@ -2,7 +2,8 @@ import asyncio
 import socket
 import logging.config
 from asyncio import StreamWriter, StreamReader
-from proxy._proxy_config import ProxyConfig
+from itertools import chain
+
 from proxy._defaults import (LOCALHOST,
                              CHUNK_SIZE,
                              CONNECTION_ESTABLISHED_MSG,
@@ -25,17 +26,14 @@ class ProxyServer:
             cfg=None
     ):
         self.port = port
-        self._restrictions = {}
+        self._spent_data = {}
         if cfg is not None:
             if isinstance(cfg, dict):
-                self._cfg = ProxyConfig(cfg)
-                self._restrictions = dict(
-                    [(rsc.hostname, rsc)
-                     for rsc in ProxyConfig(cfg).restrictions()]
-                )
+                self._cfg = cfg
             else:
                 raise ValueError(f"Config should be {dict.__name__} object")
-        self._spent_data_amount = {}
+            for rsc in chain(cfg["limited"], cfg["black-list"]):
+                self._spent_data[rsc] = 0
         logging.config.dictConfig(LOGGING_CONFIG)
         self._logger = logging.getLogger(__name__)
 
@@ -66,7 +64,7 @@ class ProxyServer:
             await client_writer.drain()
             if not raw_request:
                 return
-            greeting = Request(raw_request, list(self._restrictions.values()))
+            greeting = Request(raw_request, self._cfg)
             self._logger.info(f"{greeting.method:<{len('CONNECT')}} "
                               f"{greeting.abs_url}")
             try:
@@ -89,7 +87,9 @@ class ProxyServer:
             else:
                 await self._handle_http(*args)
         except ConnectionResetError:
-            self._logger.info(CONNECTION_CLOSED_MSG.format(url=greeting.abs_url))
+            self._logger.info(CONNECTION_CLOSED_MSG.format(
+                url=greeting.abs_url)
+            )
         except Exception as e:
             self._logger.exception(e)
             asyncio.get_event_loop().stop()
@@ -168,9 +168,9 @@ class ProxyServer:
         """
         while True:
             data = await server_reader.read(CHUNK_SIZE)
-            if r.is_restricted:
-                if self._restrictions[r.initiator].spent_data >= \
-                        self._restrictions[r.initiator].data_limit:
+            if r.restriction:
+                if self._spent_data[r.restriction.initiator] >= \
+                        r.restriction.data_limit:
                     await self._handle_limited_page(local_writer, r)
                     break
             if data:
@@ -184,11 +184,11 @@ class ProxyServer:
                 local_writer.close()
                 await local_writer.wait_closed()
                 break
-            if r.is_restricted:
-                self._restrictions[r.initiator].spent_data += len(data)
+            if r.restriction:
+                self._spent_data[r.restriction.initiator] += len(data)
                 self._logger.debug(
-                    f"{self._restrictions[r.initiator].spent_data}"
-                    f" WAS SPENT FOR {r.initiator}"
+                    f"{self._spent_data[r.restriction.initiator]}"
+                    f" WAS SPENT FOR {r.restriction.initiator}"
                 )
 
     async def _handle_limited_page(
@@ -201,15 +201,15 @@ class ProxyServer:
         In HTTP case it sends HTML notification page.
         In HTTPS case it closes connection.
         """
-        rsc = self._restrictions[r.initiator]
+        rsc = r.restriction
         if rsc.data_limit == 0:
-            self._logger.info(BLACK_HOLE_MSG.format(url=r.initiator))
+            self._logger.info(BLACK_HOLE_MSG.format(url=rsc.initiator))
         else:
-            self._logger.info(BLOCKED_WEBPAGE.format(url=r.initiator))
-        if r.scheme == HTTPScheme.HTTPS:
+            self._logger.info(BLOCKED_WEBPAGE.format(url=rsc.initiator))
+        if r.scheme is HTTPScheme.HTTPS:
             msg = "HTTP/1.1 403\r\n\r\n"
         else:
-            msg = f"HTTP/1.1 200 OK\r\n\r\n{rsc.http_content()}"
+            msg = f"HTTP/1.1 200 OK\r\n\r\n{rsc.http_content}"
         client_writer.write(msg.encode())
         await client_writer.drain()
         client_writer.close()

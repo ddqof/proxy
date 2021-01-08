@@ -1,9 +1,9 @@
 import re
 from collections import namedtuple
 from enum import Enum, auto
-from typing import List
 
-from proxy._restricted_resource import RestrictedResource
+from proxy._defaults import (LIMITED_RESOURCE_FILE_PATH,
+                             BLOCKED_RESOURCE_FILE_PATH)
 
 
 class HTTPScheme(Enum):
@@ -22,7 +22,7 @@ class Request:
      "scheme": scheme of HTTP connection
     """
 
-    def __init__(self, raw_data: bytes, restrictions=None):
+    def __init__(self, raw_data: bytes, config=None):
         self.raw = raw_data
         self._decoded_meta = self.raw.decode()
         self._method_regex = re.compile(r"^(\w+)")
@@ -46,15 +46,12 @@ class Request:
                 self.port = 443
             else:
                 self.port = 80
-        if restrictions is None:
-            self.is_restricted = False
-            self.initiator = self.hostname
+        if config is None:
+            self.restriction = None
         else:
-            restriction_info = self._check_restrictions(restrictions)
-            self.is_restricted = restriction_info.is_restricted
-            self.initiator = restriction_info.initiator
+            self.restriction = self._check_restrictions(config)
 
-    def _check_restrictions(self, cfg_restrictions: List[RestrictedResource]):
+    def _check_restrictions(self, config):
         vk_helpers = [
             re.compile(r".*\.vkuseraudio\.net"),
             re.compile(r"st\d{1,2}-\d{1,2}\.vk\.com"),
@@ -69,15 +66,20 @@ class Request:
             re.compile(r".*\.googlevideo\.com"),  # youtube videos
             re.compile(r"youtube\.com")
         ]
-        RestrictionInfo = namedtuple(
-            "RestrictionInfo", ["is_restricted", "initiator"]
+        RestrictedResource = namedtuple(
+            "RestrictedResource", ["initiator", "data_limit", "http_content"]
         )
         initiator = self.hostname
         if any(re.search(pattern, self.hostname) for pattern in vk_helpers):
             initiator = "vk.com"
         elif any(re.search(pattern, self.hostname) for pattern in yt_helpers):
             initiator = "youtube.com"
-        for rsc in cfg_restrictions:
-            if initiator == rsc.hostname:
-                return RestrictionInfo(True, initiator)
-        return RestrictionInfo(False, initiator)
+        for hostname in config["black-list"]:
+            if hostname == initiator:
+                with open(BLOCKED_RESOURCE_FILE_PATH) as f:
+                    return RestrictedResource(initiator, 0, f.read())
+        for hostname in config["limited"]:
+            if hostname == initiator:
+                with open(LIMITED_RESOURCE_FILE_PATH) as f:
+                    return RestrictedResource(
+                        initiator, config["limited"][hostname], f.read())
