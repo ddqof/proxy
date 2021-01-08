@@ -11,7 +11,7 @@ class HTTPScheme(Enum):
     HTTPS = auto()
 
 
-class Request:
+class ProxyRequest:
     """
      "raw": raw binary request body.
      "method": HTTP request method.
