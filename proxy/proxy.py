@@ -17,6 +17,9 @@ from proxy._defaults import (LOCALHOST,
 from proxy._proxy_request import ProxyRequest, HTTPScheme
 from proxy._log_config import LOGGING_CONFIG
 
+logging.config.dictConfig(LOGGING_CONFIG)
+LOGGER = logging.getLogger(__name__)
+
 
 class ProxyServer:
 
@@ -34,8 +37,6 @@ class ProxyServer:
                 raise ValueError(f"Config should be {dict.__name__} object")
             for rsc in chain(cfg["limited"], cfg["black-list"]):
                 self._spent_data[rsc] = 0
-        logging.config.dictConfig(LOGGING_CONFIG)
-        self._logger = logging.getLogger(__name__)
 
     async def run(self):
         """
@@ -45,7 +46,7 @@ class ProxyServer:
             self._handle_connection, LOCALHOST, self.port)
 
         addr = srv.sockets[0].getsockname()
-        self._logger.info(START_SERVER_MSG.format(app_address=addr))
+        LOGGER.info(START_SERVER_MSG.format(app_address=addr))
 
         async with srv:
             await srv.serve_forever()
@@ -65,15 +66,14 @@ class ProxyServer:
             if not raw_request:
                 return
             pr = ProxyRequest(raw_request, self._cfg)
-            self._logger.info(f"{pr.method:<{len('CONNECT')}} "
-                              f"{pr.abs_url}")
+            LOGGER.info(f"{pr.method:<{len('CONNECT')}} "
+                        f"{pr.abs_url}")
             try:
                 server_reader, server_writer = await asyncio.open_connection(
                     pr.hostname, pr.port)
             except socket.gaierror:
-                self._logger.info(
-                    CONNECTION_REFUSED_MSG.format(
-                        method=pr.method, url=pr.abs_url))
+                LOGGER.info(CONNECTION_REFUSED_MSG.format(
+                    method=pr.method, url=pr.abs_url))
                 return
             args = [
                 pr,
@@ -87,11 +87,9 @@ class ProxyServer:
             else:
                 await self._handle_http(*args)
         except ConnectionResetError:
-            self._logger.info(CONNECTION_CLOSED_MSG.format(
-                url=pr.abs_url)
-            )
+            LOGGER.info(CONNECTION_CLOSED_MSG.format(url=pr.abs_url))
         except Exception as e:
-            self._logger.exception(e)
+            LOGGER.exception(e)
             asyncio.get_event_loop().stop()
 
     async def _handle_http(
@@ -105,7 +103,7 @@ class ProxyServer:
         """
         Send HTTP request and then forwards the following HTTP requests.
         """
-        self._logger.debug(HANDLING_HTTP_REQUEST_MSG.format(
+        LOGGER.debug(HANDLING_HTTP_REQUEST_MSG.format(
             method=pr.method, url=pr.abs_url)
         )
         server_writer.write(pr.raw)
@@ -126,11 +124,10 @@ class ProxyServer:
         """
         Handles https connection by making HTTP tunnel.
         """
-        self._logger.debug(
-            HANDLING_HTTPS_CONNECTION_MSG.format(url=pr.hostname))
+        LOGGER.debug(HANDLING_HTTPS_CONNECTION_MSG.format(url=pr.hostname))
         client_writer.write(b"HTTP/1.1 200 Connection established\r\n\r\n")
         await client_writer.drain()
-        self._logger.debug(CONNECTION_ESTABLISHED_MSG.format(url=pr.abs_url))
+        LOGGER.debug(CONNECTION_ESTABLISHED_MSG.format(url=pr.abs_url))
         await asyncio.gather(
             self._forward_to_remote(client_reader, server_writer, pr),
             self._forward_to_local(server_reader, client_writer, pr)
@@ -153,9 +150,10 @@ class ProxyServer:
                 break
             server_writer.write(data)
             await server_writer.drain()
-            self._log_forwarding(
+            ProxyServer._log_forwarding(
                 server_writer.get_extra_info("peername")[0],
-                len(data), pr)
+                len(data), pr
+            )
 
     async def _forward_to_local(
             self,
@@ -186,7 +184,7 @@ class ProxyServer:
                 break
             if pr.restriction:
                 self._spent_data[pr.restriction.initiator] += len(data)
-                self._logger.debug(
+                LOGGER.debug(
                     f"{self._spent_data[pr.restriction.initiator]}"
                     f" WAS SPENT FOR {pr.restriction.initiator}"
                 )
@@ -203,9 +201,9 @@ class ProxyServer:
         """
         rsc = pr.restriction
         if rsc.data_limit == 0:
-            self._logger.info(BLACK_HOLE_MSG.format(url=rsc.initiator))
+            LOGGER.info(BLACK_HOLE_MSG.format(url=rsc.initiator))
         else:
-            self._logger.info(BLOCKED_WEBPAGE.format(url=rsc.initiator))
+            LOGGER.info(BLOCKED_WEBPAGE.format(url=rsc.initiator))
         if pr.scheme is HTTPScheme.HTTPS:
             msg = "HTTP/1.1 403\r\n\r\n"
         else:
@@ -215,8 +213,8 @@ class ProxyServer:
         client_writer.close()
         await client_writer.wait_closed()
 
+    @staticmethod
     def _log_forwarding(
-            self,
             sender_ip: str,
             data_size: int,
             pr: ProxyRequest
@@ -229,5 +227,5 @@ class ProxyServer:
             pass
         else:
             query = "Response from server"
-        self._logger.debug(f"{sender_ip:<{len('255.255.255.255')}} "
-                           f"{query} {data_size}")
+        LOGGER.debug(f"{sender_ip:<{len('255.255.255.255')}} "
+                     f"{query} {data_size}")

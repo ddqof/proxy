@@ -5,7 +5,7 @@ from proxy._defaults import BLACK_HOLE_PATH, DATA_LIMIT_PATH
 from proxy._proxy_config import RestrictedResource
 from typing import Callable, List
 from proxy._defaults import LOCALHOST
-from proxy._request import Request
+from proxy._proxy_request import ProxyRequest
 from proxy.proxy import ProxyServer
 from unittest.mock import patch
 
@@ -48,7 +48,7 @@ async def handle(
 # REQUEST TEMPLATES
 
 def get_initial_http_request(server_port):
-    return Request(
+    return ProxyRequest(
         method="GET",
         abs_url=f"localhost:{server_port}",
         host_url="localhost",
@@ -58,7 +58,7 @@ def get_initial_http_request(server_port):
 
 
 def get_initial_connect_request(server_port):
-    return Request(
+    return ProxyRequest(
         method="CONNECT",
         abs_url=f"localhost:{server_port}",
         host_url="localhost",

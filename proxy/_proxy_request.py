@@ -1,6 +1,7 @@
 import re
 from collections import namedtuple
 from enum import Enum, auto
+from pathlib import Path
 
 from proxy._defaults import (LIMITED_RESOURCE_FILE_PATH,
                              BLOCKED_RESOURCE_FILE_PATH)
@@ -76,10 +77,15 @@ class ProxyRequest:
             initiator = "youtube.com"
         for hostname in config["black-list"]:
             if hostname == initiator:
-                with open(BLOCKED_RESOURCE_FILE_PATH) as f:
-                    return RestrictedResource(initiator, 0, f.read())
+                return RestrictedResource(
+                    initiator,
+                    0,
+                    Path(BLOCKED_RESOURCE_FILE_PATH).read_text()
+                )
         for hostname in config["limited"]:
             if hostname == initiator:
-                with open(LIMITED_RESOURCE_FILE_PATH) as f:
-                    return RestrictedResource(
-                        initiator, config["limited"][hostname], f.read())
+                return RestrictedResource(
+                    initiator,
+                    config["limited"][hostname],
+                    Path(LIMITED_RESOURCE_FILE_PATH).read_text()
+                )

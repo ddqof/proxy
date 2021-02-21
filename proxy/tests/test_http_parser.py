@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
 
-from proxy._request import (parse,
-                            get_method,
-                            get_url,
-                            get_host_from_url,
-                            get_port_from_url)
+from proxy._proxy_request import (parse,
+                                  get_method,
+                                  get_url,
+                                  get_host_from_url,
+                                  get_port_from_url)
 
 
 @pytest.fixture
