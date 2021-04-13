@@ -51,6 +51,16 @@ class ProxyRequest:
             self.restriction = None
         else:
             self.restriction = self._check_restrictions(config)
+        self.is_image_request = False
+        try:
+            if (
+                    self.abs_url.endswith(".jpg") or
+                    self.abs_url.endswith(".jpeg") or
+                    self.abs_url.endswith(".png")
+            ):
+                self.is_image_request = True
+        except UnicodeDecodeError:
+            pass
 
     def _check_restrictions(self, config):
         vk_helpers = [

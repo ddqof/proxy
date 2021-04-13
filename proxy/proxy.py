@@ -23,11 +23,9 @@ LOGGER = logging.getLogger(__name__)
 
 class ProxyServer:
 
-    def __init__(
-            self,
-            port: int,
-            cfg=None
-    ):
+    def __init__(self, port: int, cfg=None):
+        self.block_images = True
+        self.HTTP_RESET_MSG = b"HTTP/1.1 403"
         self.port = port
         self._spent_data = {}
         if cfg is not None:
@@ -51,6 +49,17 @@ class ProxyServer:
         async with srv:
             await srv.serve_forever()
 
+    async def _reset_connection(
+            self,
+            client_writer: StreamWriter,
+            pr: ProxyRequest
+    ):
+        LOGGER.info(f"Blocked image {pr.method:<{len('CONNECT')}} "
+                    f"{pr.abs_url}")
+        client_writer.write(self.HTTP_RESET_MSG)
+        await client_writer.drain()
+        client_writer.close()
+
     async def _handle_connection(
             self,
             client_reader: StreamReader,
@@ -66,6 +75,9 @@ class ProxyServer:
             if not raw_request:
                 return
             pr = ProxyRequest(raw_request, self._cfg)
+            if self.block_images and pr.is_image_request:
+                await self._reset_connection(client_writer, pr)
+                return
             LOGGER.info(f"{pr.method:<{len('CONNECT')}} "
                         f"{pr.abs_url}")
             try:
@@ -110,7 +122,7 @@ class ProxyServer:
         await server_writer.drain()
         await asyncio.gather(
             self._forward_to_local(server_reader, client_writer, pr),
-            self._forward_to_remote(client_reader, server_writer, pr)
+            self._forward_to_remote(client_reader, server_writer, client_writer, pr)
         )
 
     async def _handle_https(
@@ -129,7 +141,7 @@ class ProxyServer:
         await client_writer.drain()
         LOGGER.debug(CONNECTION_ESTABLISHED_MSG.format(url=pr.abs_url))
         await asyncio.gather(
-            self._forward_to_remote(client_reader, server_writer, pr),
+            self._forward_to_remote(client_reader, server_writer, client_writer, pr),
             self._forward_to_local(server_reader, client_writer, pr)
         )
 
@@ -137,6 +149,7 @@ class ProxyServer:
             self,
             local_reader: StreamReader,
             server_writer: StreamWriter,
+            local_writer: StreamWriter,
             pr: ProxyRequest
     ) -> None:
         """
@@ -148,6 +161,18 @@ class ProxyServer:
                 server_writer.close()
                 await server_writer.wait_closed()
                 break
+            else:
+                try:
+                    decoded_data = data.decode()
+                    if (".jpg" in decoded_data or
+                            ".jpeg" in decoded_data or
+                            ".png" in decoded_data):
+                        local_writer.write(self.HTTP_RESET_MSG)
+                        local_writer.close()
+                        await local_writer.drain()
+                        return
+                except UnicodeDecodeError:
+                    pass
             server_writer.write(data)
             await server_writer.drain()
             ProxyServer._log_forwarding(
