@@ -89,7 +89,7 @@ class Connection:
         await self.client.write_and_drain(HTTP_RESET_MSG)
         await self.client.close()
 
-    def _log_forwarding(self, endpoint_type: EndpointType, data: bytes) -> None:
+    def _log_forwarding(self, endpoint_type: EndpointType, data: bytes):
         """
         Logging forwarding message.
         """

@@ -21,7 +21,8 @@ from proxy._proxy_request import ProxyRequest, HTTPScheme
 logging.config.dictConfig(LOGGING_CONFIG)
 LOGGER = logging.getLogger(__name__)
 
-CONNECTION_ESTABLISHED_HTTP_MSG = b"HTTP/1.1 200 Connection established\r\n\r\n"
+CONNECTION_ESTABLISHED_HTTP_MSG = b"HTTP/1.1 200 Connection " \
+                                  b"established\r\n\r\n"
 
 
 class ProxyServer:
@@ -80,8 +81,10 @@ class ProxyServer:
                 return
             client_endpoint = Endpoint(client_reader, client_writer)
             server_endpoint = Endpoint(server_reader, server_writer)
-            connection = Connection(client_endpoint, server_endpoint, pr, self.block_images)
-            self.context_token = self.connection.set(connection)
+            conn = Connection(
+                client_endpoint, server_endpoint, pr, self.block_images
+            )
+            self.context_token = self.connection.set(conn)
             if self.block_images and pr.is_image_request:
                 await self.connection.get().reset()
                 return
@@ -102,24 +105,31 @@ class ProxyServer:
         """
         Send HTTP request and then forwards the following HTTP requests.
         """
-        connection = self.connection.get()
+        conn = self.connection.get()
         LOGGER.debug(HANDLING_HTTP_REQUEST_MSG.format(
-            method=connection.pr.method, url=connection.pr.abs_url)
+            method=conn.pr.method, url=conn.pr.abs_url)
         )
-        await connection.server.write_and_drain(connection.pr.raw)
-        await asyncio.gather(connection.forward_to_client(self._spent_data), connection.forward_to_server())
+        await conn.server.write_and_drain(conn.pr.raw)
+        await asyncio.gather(
+            conn.forward_to_client(self._spent_data),
+            conn.forward_to_server()
+        )
 
     async def _handle_https(self) -> None:
         """
         Handles https connection by making HTTP tunnel.
         """
-        connection = self.connection.get()
-        LOGGER.debug(HANDLING_HTTPS_CONNECTION_MSG.format(url=connection.pr.hostname))
-        restriction = connection.pr.restriction
-        if restriction:
-            if self._spent_data[restriction.initiator] >= restriction.data_limit:
-                await connection.reset()
+        conn = self.connection.get()
+        hostname = conn.pr.hostname
+        LOGGER.debug(HANDLING_HTTPS_CONNECTION_MSG.format(url=hostname))
+        rsc = conn.pr.restriction
+        if rsc:
+            if self._spent_data[rsc.initiator] >= rsc.data_limit:
+                await conn.reset()
                 return
-        await connection.client.write_and_drain(CONNECTION_ESTABLISHED_HTTP_MSG)
-        LOGGER.debug(CONNECTION_ESTABLISHED_MSG.format(url=connection.pr.abs_url))
-        await asyncio.gather(connection.forward_to_server(), connection.forward_to_client(self._spent_data))
+        await conn.client.write_and_drain(CONNECTION_ESTABLISHED_HTTP_MSG)
+        LOGGER.debug(CONNECTION_ESTABLISHED_MSG.format(url=conn.pr.abs_url))
+        await asyncio.gather(
+            conn.forward_to_server(),
+            conn.forward_to_client(self._spent_data)
+        )
