@@ -7,7 +7,7 @@ class Endpoint:
         self.reader = reader
         self.writer = writer
 
-    async def write(self, msg: bytes) -> None:
+    async def write_and_drain(self, msg: bytes) -> None:
         self.writer.write(msg)
         await self.writer.drain()
 
