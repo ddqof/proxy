@@ -48,7 +48,8 @@ def test_get_url_from_requests_https_meta(https_meta_without_headers):
 
 
 def test_get_url_from_browser_https_meta(https_meta_from_browser):
-    assert ProxyRequest(https_meta_from_browser).abs_url == "www.google.com:443"
+    assert ProxyRequest(https_meta_from_browser).abs_url ==\
+           "www.google.com:443"
 
 
 def test_get_port_from_url_with_port(https_meta_from_browser):

@@ -1,5 +1,4 @@
 import re
-from collections import namedtuple
 from enum import Enum, auto
 from pathlib import Path
 
@@ -77,9 +76,6 @@ class ProxyRequest:
             re.compile(r".*\.googlevideo\.com"),  # youtube videos
             re.compile(r"youtube\.com")
         ]
-        RestrictedResource = namedtuple(
-            "RestrictedResource", ["initiator", "data_limit", "http_content"]
-        )
         initiator = self.hostname
         if any(re.search(pattern, self.hostname) for pattern in vk_helpers):
             initiator = "vk.com"
@@ -99,3 +95,11 @@ class ProxyRequest:
                     config["limited"][hostname],
                     Path(LIMITED_RESOURCE_FILE_PATH).read_text()
                 )
+
+
+class RestrictedResource:
+
+    def __init__(self, initiator: str, limit: int, http_content: str):
+        self.initiator = initiator
+        self.data_limit = limit
+        self.http_content = http_content

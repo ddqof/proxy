@@ -26,7 +26,7 @@ CONNECTION_ESTABLISHED_HTTP_MSG = b"HTTP/1.1 200 Connection established\r\n\r\n"
 
 class ProxyServer:
 
-    def __init__(self, port: int, block_images: bool = False, cfg=None):
+    def __init__(self, port: int = 8080, block_images: bool = False, cfg=None):
         self.connection = ContextVar("connection")
         self.block_images = block_images
         self.port = port
@@ -64,6 +64,7 @@ class ProxyServer:
         """
         try:
             raw_request = await client_reader.read(CHUNK_SIZE)
+            print(raw_request)
             await client_writer.drain()
             if not raw_request:
                 return
@@ -114,6 +115,11 @@ class ProxyServer:
         """
         connection = self.connection.get()
         LOGGER.debug(HANDLING_HTTPS_CONNECTION_MSG.format(url=connection.pr.hostname))
+        restriction = connection.pr.restriction
+        if restriction:
+            if self._spent_data[restriction.initiator] >= restriction.data_limit:
+                await connection.reset()
+                return
         await connection.client.write_and_drain(CONNECTION_ESTABLISHED_HTTP_MSG)
         LOGGER.debug(CONNECTION_ESTABLISHED_MSG.format(url=connection.pr.abs_url))
         await asyncio.gather(connection.forward_to_server(), connection.forward_to_client(self._spent_data))

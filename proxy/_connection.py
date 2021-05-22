@@ -7,7 +7,7 @@ from proxy.enpoint_type import EndpointType
 
 CHUNK_SIZE = 2 ** 20
 IMG_EXTS = {".jpg", ".jpeg", ".png"}
-HTTP_RESET_MSG = b"HTTP/1.1 403"
+HTTP_RESET_MSG = b"HTTP/1.1 403\r\n\r\n"
 
 LOGGER = logging.getLogger("proxy.proxy")
 
