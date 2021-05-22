@@ -1,7 +1,6 @@
 from pathlib import Path
 
 LOCALHOST = "localhost"
-CHUNK_SIZE = 2 ** 20
 START_SERVER_MSG = "Serving on {app_address}"
 CONNECTION_ESTABLISHED_MSG = "Connection established: {url}"
 CONNECTION_CLOSED_MSG = "Connection closed: {url}"
