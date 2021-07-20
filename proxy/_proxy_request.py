@@ -28,7 +28,7 @@ class ProxyRequest:
         self._method_regex = re.compile(r"^(\w+)")
         self._url_regex = re.compile(r"\w+ (.+?) HTTP/\d.\d", re.DOTALL)
         self._host_regex = re.compile(r"(^https?://|)(www.)?([A-z.\-0-9]+)")
-        self._port_regex = re.compile(r":(\d+)$")
+        self._port_regex = re.compile(r":(\d+)/")
         self.method = re.search(
             self._method_regex, self._decoded_meta
         ).group(1)

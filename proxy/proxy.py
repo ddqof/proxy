@@ -75,7 +75,7 @@ class ProxyServer:
             try:
                 server_reader, server_writer = await asyncio.open_connection(
                     pr.hostname, pr.port)
-            except socket.gaierror:
+            except OSError:
                 LOGGER.info(CONNECTION_REFUSED_MSG.format(
                     method=pr.method, url=pr.abs_url))
                 return
